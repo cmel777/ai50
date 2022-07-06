@@ -13,16 +13,16 @@ movies = {}
 count_explored = 0
 
 
-class Node():
-    def __init__(self, least_degree, path):
+class Node:
+    def __init__(self, state, least_degree, path):
+        self.state = state
         self.least_degree = least_degree
         self.path = path
 
 
-globals()
-node = Node(None, None)
-least_path=0
+node = Node(None, None, None)
 
+least_path = 0
 
 def print_data():
     print("People")
@@ -106,14 +106,14 @@ def main():
         sys.exit("Person not found.")
 
     # Returns the shortest list of (movie_id, person_id) pairs
-    path = shortest_path(source, target)
+    shortest_path(source, target, node)
 
-    if path is None:
+    if node is None:
         print("Not connected.")
     else:
-        degrees = len(path)
+        degrees = len(node.path)
         print(f"{degrees} degrees of separation.")
-        path = [(None, source)] + path
+        path = [(None, source)] + node.path
         for i in range(degrees):
             person1 = people[path[i][1]]["name"]
             person2 = people[path[i + 1][1]]["name"]
@@ -121,7 +121,7 @@ def main():
             print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
 
-def shortest_path(source, target):
+def shortest_path(source, target, node):
     """
     Returns the shortest list of (movie_id, person_id) pairs
     that connect the source to the target.
@@ -131,14 +131,13 @@ def shortest_path(source, target):
 
     # If nothing left in frontier, then no path
 
-    path = []
 
     # Keep looping until solution found
     # If nothing left in frontier, then no path
     # if frontier.empty():
     # raise Exception("no solution")
 
-    return compute(source, target, path)
+    return compute(source, target, node)
 
     # TODO
     raise NotImplementedError
@@ -158,15 +157,20 @@ def neighbors_for_person(person_id):
     return neighbors
 
 
-def compute(source, target, path):
+def compute(source, target, node):
     # Add neighbors to frontier
     i = 0
     for neighbour in neighbors_for_person(source):
-        #path={}
+        path = []
         if neighbour[1] == target:
             path.append((neighbour[0], neighbour[1]))
-            #if len(path) < node[0]:
-            return path
+            if node.least_degree is not None:
+                if node.least_degree > len(path):
+                    node = Node(len(path), path)
+            else:
+                node = Node(len(path), path)
+
+            return node
 
             #node = {len(path), path}
             #return path
