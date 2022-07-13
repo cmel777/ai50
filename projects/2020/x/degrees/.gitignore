@@ -27,7 +27,9 @@
 # OS generated files #
 ######################
 .DS_Store
-.DS_Store?
+projects/.DS_Store
+projects/2020/.DS_Store
+projects/2020/x/.DS_Store
 ._*
 .Spotlight-V100
 .Trashes

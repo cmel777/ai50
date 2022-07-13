@@ -24,6 +24,7 @@ node = Node(None, None, None)
 
 least_path = 0
 
+
 def print_data():
     print("People")
     print("*******")
@@ -131,7 +132,6 @@ def shortest_path(source, target, node):
 
     # If nothing left in frontier, then no path
 
-
     # Keep looping until solution found
     # If nothing left in frontier, then no path
     # if frontier.empty():
@@ -160,23 +160,24 @@ def neighbors_for_person(person_id):
 def compute(source, target, node):
     # Add neighbors to frontier
     i = 0
-    for neighbour in neighbors_for_person(source):
+
+    for count, item in enumerate(neighbors_for_person(source), start=1):
         path = []
-        if neighbour[1] == target:
-            path.append((neighbour[0], neighbour[1]))
+        if (count - 1) == 0:
+            print("last element is" + item[1])
+        if xs[i] == target:
+            path.append((xs[i][0], xs[i][1]))
+            return node
             if node.least_degree is not None:
                 if node.least_degree > len(path):
                     node = Node(len(path), path)
-            else:
-                node = Node(len(path), path)
+                    return node
 
-            return node
-
-            #node = {len(path), path}
-            #return path
-        #else:
-           # start = Node(None, neighbour[1], None)
-           # compute()
+        # node = {len(path), path}
+        # return path
+        # else:
+        # start = Node(None, neighbour[1], None)
+        # compute()
 
         # for neighbour2 in neighbors_for_person(node.parent):
 
