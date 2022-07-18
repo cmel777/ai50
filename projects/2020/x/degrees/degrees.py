@@ -45,6 +45,7 @@ def print_movies():
     for item in movies.items():
         print(item)
 
+
 """
 def print_foundneighbours():
     print("Print Neighbours")
@@ -53,6 +54,8 @@ def print_foundneighbours():
         print(item)
     print("***End Print Neighbours****")
 """
+
+
 def print_names():
     print("Name")
     print("*******")
@@ -136,8 +139,11 @@ def main():
 
     lock = multiprocessing.Lock()
     # Returns the shortest list of (movie_id, person_id) pairs
-    shortest_path(source, target, node, parent_path, lock, found_neighbours, people, names, movies)
+    shortest_path(source, source, target, node, parent_path, lock, found_neighbours, people, names, movies)
+    print_degrees(source, node, people, movies)
 
+
+def print_degrees(source, node, people, movies):
     if node is None:
         print("Not connected.")
     else:
@@ -159,7 +165,7 @@ def neighbors_for_person(person_id, people, movies):
     """
     # try:
     if person_id not in found_neighbours:
-        #print("source id inside :" + person_id)
+        # print("source id inside :" + person_id)
         movie_ids = people[person_id]["movies"]
         neighbors = set()
         for movie_id in movie_ids:
@@ -195,7 +201,7 @@ def person_id_for_name(name):
         return person_ids[0]
 
 
-def shortest_path(source, target, node, parent_path, lock, found_neighbours, people, names, movies):
+def shortest_path(source, int_source, target, node, parent_path, lock, found_neighbours, people, names, movies):
     """
     Returns the shortest list of (movie_id, person_id) pairs
     that connect the source to the target.
@@ -210,35 +216,28 @@ def shortest_path(source, target, node, parent_path, lock, found_neighbours, peo
     # raise Exception("no solution")
 
     # Add neighbors to frontier
-    if source is not None:
-        if str(source) in found_neighbours:
+    if int_source is not None:
+        if str(int_source) in found_neighbours:
             # do nothing
             return
         else:
-            neighbourliness = neighbors_for_person(str(source), people, movies)
-            found_neighbours.append(source)
-            if parent_path is not None:
-                path = set()
-                path = parent_path
-
+            neighbourliness = neighbors_for_person(str(int_source), people, movies)
+            found_neighbours.append(int_source)
             Process_jobs = []
             for count, item in enumerate(neighbourliness, start=1):
+                path = parent_path
                 path.add((item[0], item[1]))
                 parent_path.add((item[0], item[1]))
-                #print("Source:" + source + " Star:" + item[1] + " Movie:" + item[0])
+                #print("Source:" + source + " Int Star:" + int_source + " Star:" + item[1] + " Movie:" + item[0])
                 if item[1] is not None:
-                    p = multiprocessing.Process(target=shortest_path,
-                                                args=(item[1], target, node, parent_path, lock, found_neighbours,
-                                                      people, names, movies))
-                    Process_jobs.append(p)
-                    p.start()
-                    p.join()
                     if item[1] == target:
                         print("*************************************************")
-                        print("Item: " + item[1] + " Equal to Target :" + target)
+                        #print("Item: " + item[1] + " Equal to Target :" + target)
+                        print("Source:" + source + " Int Star:" + int_source + " Star:" + item[1] + " Movie:" + item[0])
                         path.add((item[0], item[1]))
                         print("PATH")
                         print(path)
+                        print_degrees(source, node, people, movies)
                         degrees = len(path)
                         print("DEGREE")
                         print(degrees)
@@ -248,15 +247,23 @@ def shortest_path(source, target, node, parent_path, lock, found_neighbours, peo
                         if degrees is not None:
                             if node.least_degree is None:
                                 node.least_degree = degrees
+                                print("Degree change to new lower: " + str(degrees))
                             if int(node.least_degree) > degrees:
                                 lock.acquire()
-                                print("Inside For source :" + source + "degrees old degrees is :" + degrees +
+                                print("For source :" + source + "degrees old degrees is :" + degrees +
                                       "degrees new degrees is :" + node.least_degree)
                                 node.least_degree = degrees
                                 node.path = path
                                 lock.release()
                                 return
 
+                    p = multiprocessing.Process(target=shortest_path,
+                                                args=(
+                                                    source, item[1], target, node, parent_path, lock, found_neighbours,
+                                                    people, names, movies))
+                    Process_jobs.append(p)
+                    p.start()
+                    p.join()
     # TODO
     sys.exit()
 
@@ -268,8 +275,3 @@ if __name__ == "__main__":
         print("degrees new degrees is :" + node.least_degree)
         print("END")
         sys.exit(0)
-
-
-
-
-
