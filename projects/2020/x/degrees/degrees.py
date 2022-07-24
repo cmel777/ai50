@@ -20,14 +20,14 @@ found_neighbours = []
 parent_path = set()
 
 
+
 class Node:
-    def __init__(self, state, least_degree, path):
-        self.state = state
+    def __init__(self, least_degree, path):
         self.least_degree = least_degree
         self.path = path
 
 
-node = Node(None, None, None)
+node = Node(100, None)
 
 least_path = 0
 
@@ -66,7 +66,7 @@ def print_names():
 
 def print_neighbours(source):
     print("Neighbours for star: " + source)
-    for item in neighbors_for_person(source):
+    for item in neighbors_for_person(source, people, movies):
         print(item)
     print("**********************************************")
 
@@ -75,7 +75,7 @@ def print_all(source):
     print_people()
     print_movies()
     print_names()
-    # print_neighbours(source)
+    print_neighbours(source)
 
 
 def load_data(directory):
@@ -132,15 +132,30 @@ def main():
     print_all(source)
     if source is None:
         sys.exit("Person not found.")
-    target = person_id_for_name("Kevin Bacon")
+    target = person_id_for_name("Tom Hanks")
     # target = person_id_for_name(input("Name: "))
     if target is None:
         sys.exit("Person not found.")
 
     lock = multiprocessing.Lock()
+    count = 0
     # Returns the shortest list of (movie_id, person_id) pairs
-    shortest_path(source, source, target, node, parent_path, lock, found_neighbours, people, names, movies)
-    print_degrees(source, node, people, movies)
+    shortest_path(source, source, target, node, parent_path, lock, found_neighbours, people, names, movies, count)
+    # print_degrees(source, node, people, movies)
+
+
+def print_degrees_dup(source, node, people, movies):
+    if node is None:
+        print("Not connected.")
+    else:
+        if node.path is not None:
+            degrees = len(node.path)
+            path = [(None, source)] + node.path
+            for i in range(degrees):
+                person1 = people[path[i][1]]["name"]
+                person2 = people[path[i + 1][1]]["name"]
+                movie = movies[path[i + 1][0]]["title"]
+                print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
 
 def print_degrees(source, node, people, movies):
@@ -149,6 +164,7 @@ def print_degrees(source, node, people, movies):
     else:
         if node.path is not None:
             degrees = len(node.path)
+            print("\nAnswer Start *************")
             print(f"{degrees} degrees of separation.")
             path = [(None, source)] + node.path
             for i in range(degrees):
@@ -156,6 +172,7 @@ def print_degrees(source, node, people, movies):
                 person2 = people[path[i + 1][1]]["name"]
                 movie = movies[path[i + 1][0]]["title"]
                 print(f"{i + 1}: {person1} and {person2} starred in {movie}")
+            print("\nAnswer End *************")
 
 
 def neighbors_for_person(person_id, people, movies):
@@ -172,7 +189,14 @@ def neighbors_for_person(person_id, people, movies):
             for id in movies[movie_id]["stars"]:
                 if id != person_id:
                     neighbors.add((movie_id, id))
+
+        list_of_items = list(neighbors)
+
         return neighbors
+
+
+def by_name(ele):
+    return ele[1]
 
 
 def person_id_for_name(name):
@@ -201,7 +225,7 @@ def person_id_for_name(name):
         return person_ids[0]
 
 
-def shortest_path(source, int_source, target, node, parent_path, lock, found_neighbours, people, names, movies):
+def shortest_path(source, int_source, target, node, parent_path, lock, found_neighbours, people, names, movies, count):
     """
     Returns the shortest list of (movie_id, person_id) pairs
     that connect the source to the target.
@@ -214,53 +238,85 @@ def shortest_path(source, int_source, target, node, parent_path, lock, found_nei
     # If nothing left in frontier, then no path
     # if frontier.empty():
     # raise Exception("no solution")
+    star = 0
 
+    if count > 0 and parent_path is None:
+        return
+
+    path = set()
+    path = parent_path
+    print("Parent path : " + str(parent_path))
+    print("Path outside : " + str(path))
+    print("Parent path outside : " + str(parent_path))
     # Add neighbors to frontier
     if int_source is not None:
-        if str(int_source) in found_neighbours:
+        if str(int_source) in str(found_neighbours):
             # do nothing
-            return
+            print("\n\n****************************************************")
+            print(int_source + " is found in " + str(found_neighbours))
+            print("Exit cause its found")
+            print("****************************************************\n\n")
+            sys.exit()
         else:
-            neighbourliness = neighbors_for_person(str(int_source), people, movies)
+            print("Printing found neighbours array : " + str(int_source) + " is :" + str(found_neighbours))
+            neighbourliness = sorted(neighbors_for_person(str(int_source), people, movies), key=by_name)
+            print("Printing parsing star :" + str(int_source))
+            print("Printing neighbourliness :" + str(neighbourliness))
             found_neighbours.append(int_source)
+            print("Printing found neighbours array after adding: " + str(int_source) + " is :" + str(found_neighbours))
             Process_jobs = []
             for count, item in enumerate(neighbourliness, start=1):
-                path = parent_path
-                path.add((item[0], item[1]))
-                parent_path.add((item[0], item[1]))
-                #print("Source:" + source + " Int Star:" + int_source + " Star:" + item[1] + " Movie:" + item[0])
-                if item[1] is not None:
-                    if item[1] == target:
-                        print("*************************************************")
-                        #print("Item: " + item[1] + " Equal to Target :" + target)
-                        print("Source:" + source + " Int Star:" + int_source + " Star:" + item[1] + " Movie:" + item[0])
-                        path.add((item[0], item[1]))
-                        print("PATH")
-                        print(path)
-                        print_degrees(source, node, people, movies)
-                        degrees = len(path)
-                        print("DEGREE")
-                        print(degrees)
-                        print("OLD DEGREE")
-                        print(node.least_degree)
-                        print("*************************************************")
-                        if degrees is not None:
-                            if node.least_degree is None:
-                                node.least_degree = degrees
-                                print("Degree change to new lower: " + str(degrees))
-                            if int(node.least_degree) > degrees:
-                                lock.acquire()
-                                print("For source :" + source + "degrees old degrees is :" + degrees +
-                                      "degrees new degrees is :" + node.least_degree)
-                                node.least_degree = degrees
-                                node.path = path
-                                lock.release()
-                                return
+                if str(item[1]) not in str(found_neighbours):
+                    path.add((item[0], item[1]))
+                    parent_path.add((item[0], item[1]))
+                    print("Source: " + source + " Target:" + target + " Parsing Star:" + int_source + " Next Star:" +
+                          item[
+                              1] + " Movie:" + item[0])
+                    print("Path before call : " + str(path))
+                    print("Parent path before call : " + str(parent_path)+"\n\n")
+                    if item[1] is not None:
+                        star = item[1]
+                        if item[1] == target:
+                            print("\n\n\n*******************************************")
+                            # print("Item: " + item[1] + " Equal to Target :" + target)
+                            # print("Source: " + source + " Target:" + target + " Parsing Star:" + int_source + " Add Star:" + item[1] + " Movie:" + item[0])
+                            # path.remove()
+                            # parent_path.remove()
+                            # print("PATH")
+                            # print(path)
+                            # print("PARENT_PATH")
+                            # print(parent_path)
 
+                            degrees = len(path)
+                            print("DEGREE")
+                            print(degrees)
+                            print("OLD DEGREE")
+                            print(node.least_degree)
+                            print("*************************************************\n\n")
+                            if degrees is not None:
+                                if node.least_degree is None:
+                                    node.least_degree = degrees
+                                    print("Degree change to new lower: " + str(degrees))
+                                if int(node.least_degree) > degrees:
+                                    lock.acquire()
+                                    node.least_degree = degrees
+                                    node.path = list(path)
+                                    print_degrees(source, node, people, movies)
+                                    lock.release()
+                                    path.pop()
+                                    parent_path.pop()
+                                    if len(path) == 0:
+                                        star = source
+                                        print("Star" + star)
+                                    print("Path after pop : " + str(path))
+                                    print("Parent path after pop : " + str(parent_path) + "\n\n")
+                                    if len(path) == 0:
+                                        return
+                    count = count + 1
                     p = multiprocessing.Process(target=shortest_path,
                                                 args=(
-                                                    source, item[1], target, node, parent_path, lock, found_neighbours,
-                                                    people, names, movies))
+                                                    source, star, target, node, parent_path, lock, found_neighbours,
+                                                    people, names, movies, count))
                     Process_jobs.append(p)
                     p.start()
                     p.join()
