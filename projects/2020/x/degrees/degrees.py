@@ -22,12 +22,13 @@ parent_path = set()
 
 
 class Node:
-    def __init__(self, least_degree, path):
+    def __init__(self, found, least_degree, path):
+        self.found = found
         self.least_degree = least_degree
         self.path = path
 
 
-node = Node(100, None)
+node = Node(0, 100, None)
 
 least_path = 0
 
@@ -238,8 +239,14 @@ def shortest_path(source, int_source, target, node, parent_path, lock, found_nei
     # If nothing left in frontier, then no path
     # if frontier.empty():
     # raise Exception("no solution")
-    star = 0
 
+    if node.found == 1:
+        print(" This is thread :" + str(count) + "is finishing")
+        sys.exit(0)
+
+
+    star = 0
+    print(" This is thread :" + str(count) + "\n")
     if count > 0 and parent_path is None:
         return
 
@@ -268,7 +275,7 @@ def shortest_path(source, int_source, target, node, parent_path, lock, found_nei
             for count, item in enumerate(neighbourliness, start=1):
                 if str(item[1]) not in str(found_neighbours):
                     path.add((item[0], item[1]))
-                    parent_path.add((item[0], item[1]))
+                    #parent_path.add((item[0], item[1]))
                     print("Source: " + source + " Target:" + target + " Parsing Star:" + int_source + " Next Star:" +
                           item[
                               1] + " Movie:" + item[0])
@@ -303,16 +310,20 @@ def shortest_path(source, int_source, target, node, parent_path, lock, found_nei
                                     node.path = list(path)
                                     print_degrees(source, node, people, movies)
                                     lock.release()
-                                    path.pop()
-                                    parent_path.pop()
-                                    if len(path) == 0:
-                                        star = source
-                                        print("Star" + star)
-                                    print("Path after pop : " + str(path))
-                                    print("Parent path after pop : " + str(parent_path) + "\n\n")
-                                    if len(path) == 0:
-                                        return
+                                    node.found = 1
+                                    #path.pop()
+                                    #parent_path.pop()
+                                    #if len(path) == 0:
+                                        #star = source
+                                        #print("Star " + star)
+
+                                    #print("Path after pop : " + str(path))
+                                    #if len(path) == 0:
+                                        #return
+                                    sys.exit(0)
                     count = count + 1
+                    parent_path = set()
+                    parent_path = path
                     p = multiprocessing.Process(target=shortest_path,
                                                 args=(
                                                     source, star, target, node, parent_path, lock, found_neighbours,
